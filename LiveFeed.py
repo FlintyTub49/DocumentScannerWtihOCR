@@ -77,7 +77,7 @@ while True:
 
     # In case it being interactive
     if docCap.interactive:
-        # ----------------------- expriemntal --  DELETE LATER ----------------------- #
+        # ---------------------- Experimental - For Ease Of Use ---------------------- #
         screenCnt[0][0] = screenCnt[0][0] - 10; screenCnt[0][1] = screenCnt[0][1] + 10; 
         screenCnt[1][0] = screenCnt[1][0] - 10; screenCnt[1][1] = screenCnt[1][1] - 10; 
         screenCnt[2][0] = screenCnt[2][0] + 10; screenCnt[2][1] = screenCnt[2][1] - 10; 
