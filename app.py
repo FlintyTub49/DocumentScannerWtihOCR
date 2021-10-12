@@ -60,7 +60,7 @@ def get_output():
 
 @app.route('/')
 def upload_form():
-    return render_template('index.html')
+    return render_template('index2.html')
 
 
 @app.route('/', methods=['POST'])
@@ -84,4 +84,4 @@ def upload_file():
 
 
 if __name__ == "__main__":
-    app.run(host='127.0.0.1',port=5000,debug=False,threaded=True)
+    app.run(host = '127.0.0.1', port = 5000, debug = True, threaded = True)
