@@ -104,8 +104,8 @@ while True:
     stackedImages = stackImages(0.6, imageArray)
     cv2.imshow("WorkFlow", stackedImages)
 
-    cv2.imwrite(f'/Users/nmims/Desktop/Semester VII/Capstone Project/Doc Scanner/FinalChecks/input{i}.jpeg', img)
-    cv2.imwrite(f'/Users/nmims/Desktop/Semester VII/Capstone Project/Doc Scanner/FinalChecks/output{i}.jpeg', sharpen2)
+    # cv2.imwrite(f'/Users/nmims/Desktop/Semester VII/Capstone Project/Doc Scanner/FinalChecks/input{i}.jpeg', img)
+    # cv2.imwrite(f'/Users/nmims/Desktop/Semester VII/Capstone Project/Doc Scanner/FinalChecks/output{i}.jpeg', sharpen2)
     i = i + 1                     
     if cv2.waitKey(1) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
