@@ -19,13 +19,13 @@ docCap = DocScanner(interactive = 0)
 path = os.getcwd()
 UPLOAD_FOLDER = os.path.join(path, 'uploads')
 
-# ------------------ Make directory if uploads is not exists ----------------- #
+# ---------------- Make upload directory if it does not exist ---------------- #
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ------------------ Allowed extension you can set your own ------------------ #
-ALLOWED_EXTENSIONS = set(['pdf', 'png', 'jpg', 'jpeg', 'wav'])
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -38,22 +38,17 @@ def get_output():
         # Finding Countours
         screenCnt = docCap.get_contour(img)
 
-        # In case it being interactive
+        # Interactive - NOT AVAILABLE IN WEB APP
         if docCap.interactive:
             screenCnt = docCap.interactive_get_contour(screenCnt, img)
 
-        # apply the perspective transformation
+        # Applying the perspective transformations
         warped = docCap.four_point_transform(img, screenCnt)
 
-        # convert the warped image to grayscale
+        # Preprocessing image for OCR
         gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-
-        # sharpen image
         sharpen1 = cv2.GaussianBlur(gray, (0,0), 3)
         sharpen2 = cv2.addWeighted(gray, 1.5, sharpen1, -0.5, 0)
-
-        # apply adaptive threshold to get black and white effect
-        # thresh = cv2.adaptiveThreshold(sharpen2, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 15)
 
         cv2.imwrite(os.path.join(path, f'outputs/{image}'), sharpen2)
 
