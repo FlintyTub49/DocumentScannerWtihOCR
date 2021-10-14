@@ -21,23 +21,15 @@ import os
 class DocScanner(object):
     """An Image Scanner"""
 
-    def __init__(self, interactive=False, MIN_QUAD_AREA_RATIO=0.25, MAX_QUAD_ANGLE_RANGE=40):
-        """
-        Args:
-            interactive (boolean): If True, user can adjust screen contour before
-                transformation occurs in interactive pyplot window.
-            MIN_QUAD_AREA_RATIO (float): A contour will be rejected if its corners 
-                do not form a quadrilateral that covers at least MIN_QUAD_AREA_RATIO 
-                of the original image. Defaults to 0.25.
-            MAX_QUAD_ANGLE_RANGE (int):  A contour will also be rejected if the range 
-                of its interior angles exceeds MAX_QUAD_ANGLE_RANGE. Defaults to 40.
-        """        
+    def __init__(self, interactive=False, MIN_QUAD_AREA_RATIO = 0.25, MAX_QUAD_ANGLE_RANGE = 40):
+        """ Constructor. Can decide if the scanning has to be interactive or not 
+        Not Available in web app for now """
         self.interactive = interactive
         self.MIN_QUAD_AREA_RATIO = MIN_QUAD_AREA_RATIO
         self.MAX_QUAD_ANGLE_RANGE = MAX_QUAD_ANGLE_RANGE        
 
     def filter_corners(self, corners, min_dist=20):
-        """Filters corners that are within min_dist of others"""
+        """ Filters corners that are within min_dist of others """
         def predicate(representatives, corner):
             return all(dist.euclidean(representative, corner) >= min_dist
                        for representative in representatives)
@@ -49,15 +41,13 @@ class DocScanner(object):
         return filtered_corners
 
     def angle_between_vectors_degrees(self, u, v):
-        """Returns the angle between two vectors in degrees"""
+        """ Returns the angle between two vectors in degrees """
         return np.degrees(
             math.acos(np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))))
 
     def get_angle(self, p1, p2, p3):
-        """
-        Returns the angle between the line segment from p2 to p1 
-        and the line segment from p2 to p3 in degrees
-        """
+        """ Returns the angle between the line segment from p2 to p1 and the line segment from
+         p2 to p3 in degrees """
         a = np.radians(np.array(p1))
         b = np.radians(np.array(p2))
         c = np.radians(np.array(p3))
@@ -68,11 +58,8 @@ class DocScanner(object):
         return self.angle_between_vectors_degrees(avec, cvec)
 
     def angle_range(self, quad):
-        """
-        Returns the range between max and min interior angles of quadrilateral.
-        The input quadrilateral must be a numpy array with vertices ordered clockwise
-        starting with the top left vertex.
-        """
+        """ Returns the range between max and min interior angles of quadrilateral Part of checking 
+        if the contour is valid or not """
         tl, tr, br, bl = quad
         ura = self.get_angle(tl[0], tr[0], br[0])
         ula = self.get_angle(bl[0], tl[0], tr[0])
@@ -83,27 +70,12 @@ class DocScanner(object):
         return np.ptp(angles)          
 
     def get_corners(self, img):
-        """
-        Returns a list of corners ((x, y) tuples) found in the input image. With proper
-        pre-processing and filtering, it should output at most 10 potential corners.
-        This is a utility function used by get_contours. The input image is expected 
-        to be rescaled and Canny filtered prior to be passed in.
-        """
+        """ Return corners of the document from a Canny edged image as the input """
         lines = lsd(img)
-
-        # massages the output from LSD
-        # LSD operates on edges. One "line" has 2 edges, and so we need to combine the edges back into lines
-        # 1. separate out the lines into horizontal and vertical lines.
-        # 2. Draw the horizontal lines back onto a canvas, but slightly thicker and longer.
-        # 3. Run connected-components on the new canvas
-        # 4. Get the bounding box for each component, and the bounding box is final line.
-        # 5. The ends of each line is a corner
-        # 6. Repeat for vertical lines
-        # 7. Draw all the final lines onto another canvas. Where the lines overlap are also corners
 
         corners = []
         if lines is not None:
-            # separate out the horizontal and vertical lines, and draw them back onto separate canvases
+            # Separating out vertical and horizontal lines 
             lines = lines.squeeze().astype(np.int32).tolist()
             horizontal_lines_canvas = np.zeros(img.shape, dtype=np.uint8)
             vertical_lines_canvas = np.zeros(img.shape, dtype=np.uint8)
@@ -118,7 +90,7 @@ class DocScanner(object):
 
             lines = []
 
-            # find the horizontal lines (connected-components -> bounding boxes -> final lines)
+            # Finding the horizontal lines
             (contours, hierarchy) = cv2.findContours(horizontal_lines_canvas, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             contours = sorted(contours, key=lambda c: cv2.arcLength(c, True), reverse=True)[:2]
             horizontal_lines_canvas = np.zeros(img.shape, dtype=np.uint8)
@@ -133,7 +105,7 @@ class DocScanner(object):
                 corners.append((min_x, left_y))
                 corners.append((max_x, right_y))
 
-            # find the vertical lines (connected-components -> bounding boxes -> final lines)
+            # Finding the vertical lines
             (contours, hierarchy) = cv2.findContours(vertical_lines_canvas, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             contours = sorted(contours, key=lambda c: cv2.arcLength(c, True), reverse=True)[:2]
             vertical_lines_canvas = np.zeros(img.shape, dtype=np.uint8)
@@ -148,73 +120,56 @@ class DocScanner(object):
                 corners.append((top_x, min_y))
                 corners.append((bottom_x, max_y))
 
-            # find the corners
+            # Finding final corners
             corners_y, corners_x = np.where(horizontal_lines_canvas + vertical_lines_canvas == 2)
             corners += zip(corners_x, corners_y)
 
-        # remove corners in close proximity
+        # Remove corners which are too close to each other
         corners = self.filter_corners(corners)
         return corners
 
     def is_valid_contour(self, cnt, IM_WIDTH, IM_HEIGHT):
-        """Returns True if the contour satisfies all requirements set at instantitation"""
+        """ Returns if the contour is a valid contour """
 
         return (len(cnt) == 4 and cv2.contourArea(cnt) > IM_WIDTH * IM_HEIGHT * self.MIN_QUAD_AREA_RATIO 
             and self.angle_range(cnt) < self.MAX_QUAD_ANGLE_RANGE)
 
     def order_points(self, pts):
-        # sort the points based on their x-coordinates
+        """ Order the points in a clockwise manner """
         xSorted = pts[np.argsort(pts[:, 0]), :]
-        # grab the left-most and right-most points from the sorted
-        # x-roodinate points
+        
         leftMost = xSorted[:2, :]
         rightMost = xSorted[2:, :]
-        # now, sort the left-most coordinates according to their
-        # y-coordinates so we can grab the top-left and bottom-left
-        # points, respectively
+        
         leftMost = leftMost[np.argsort(leftMost[:, 1]), :]
         (tl, bl) = leftMost
-        # now that we have the top-left coordinate, use it as an
-        # anchor to calculate the Euclidean distance between the
-        # top-left and right-most points; by the Pythagorean
-        # theorem, the point with the largest distance will be
-        # our bottom-right point
+
         D = dist.cdist(tl[np.newaxis], rightMost, "euclidean")[0]
         (br, tr) = rightMost[np.argsort(D)[::-1], :]
-        # return the coordinates in top-left, top-right,
-        # bottom-right, and bottom-left order
+        
         return np.array([tl, tr, br, bl], dtype="float32")
     
     def get_contour(self, rescaled_image):
-        """
-        Returns a numpy array of shape (4, 2) containing the vertices of the four corners
-        of the document in the image. It considers the corners returned from get_corners()
-        and uses heuristics to choose the four corners that most likely represent
-        the corners of the document. If no corners were found, or the four corners represent
-        a quadrilateral that is too small or convex, it returns the original four corners.
-        """
+        """ Returns a numpy array of shape (4, 2) containing the vertices of the four corners
+        of the document in the image. """
 
-        # these constants are carefully chosen
-        MORPH = 9
-        CANNY = 84
-        HOUGH = 25
-
+        # Constants
+        MORPH = 9; CANNY = 84; HOUGH = 25
         IM_HEIGHT, IM_WIDTH, _ = rescaled_image.shape
 
-        # convert the image to grayscale and blur it slightly
+        # Converting the image to grayscale and blurring it 
         gray = cv2.cvtColor(rescaled_image, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (7,7), 0)
 
-        # dilate helps to remove potential holes between edge segments
+        # Dilating the image a bit.
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(MORPH,MORPH))
         dilated = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, kernel)
 
-        # find edges and mark them in the output map using the Canny algorithm
+        # Finding edges using Canny Algorithm
         edged = cv2.Canny(dilated, 0, CANNY)
         test_corners = self.get_corners(edged)
 
         approx_contours = []
-
         if len(test_corners) >= 4:
             quads = []
 
@@ -224,17 +179,15 @@ class DocScanner(object):
                 points = np.array([[p] for p in points], dtype = "int32")
                 quads.append(points)
 
-            # get top five quadrilaterals by area
+            # Getting the top 5 contours by their area
             quads = sorted(quads, key=cv2.contourArea, reverse=True)[:5]
-            # sort candidate quadrilaterals by their angle range, which helps remove outliers
             quads = sorted(quads, key=self.angle_range)
 
             approx = quads[0]
             if self.is_valid_contour(approx, IM_WIDTH, IM_HEIGHT):
                 approx_contours.append(approx)
 
-            # for debugging: uncomment the code below to draw the corners and countour found 
-            # by get_corners() and overlay it on the image
+            # Debugging Purposes
 
             # for i in range(len(quads)):
             #     cv2.drawContours(rescaled_image, quads, i, (0, 230, 255), 6)
@@ -243,20 +196,17 @@ class DocScanner(object):
             # cv2.imshow('contours', rescaled_image)
             # plt.show()
 
-        # also attempt to find contours directly from the edged image, which occasionally 
-        # produces better results
+        # Finding contours directly from the Canny Image
         (cnts, hierarchy) = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
 
-        # loop over the contours
         for c in cnts:
-            # approximate the contour
             approx = cv2.approxPolyDP(c, 80, True)
             if self.is_valid_contour(approx, IM_WIDTH, IM_HEIGHT):
                 approx_contours.append(approx)
                 break
 
-        # If we did not find any valid contours, just use the whole image
+        # If no valid contours found, use the whole image.
         if not approx_contours:
             TOP_RIGHT = (IM_WIDTH, 0)
             BOTTOM_RIGHT = (IM_WIDTH, IM_HEIGHT)
@@ -269,6 +219,7 @@ class DocScanner(object):
             
         return screenCnt.reshape(4, 2)
     
+    # --------------------------- Experimental Feature --------------------------- #
     def interactive_get_contour(self, screenCnt, rescaled_image):
         poly = Polygon(screenCnt, animated = True, fill = False, color = "yellow", linewidth = 5)
         fig, ax = plt.subplots()
@@ -284,36 +235,27 @@ class DocScanner(object):
         return new_points.reshape(4, 2)
     
     def four_point_transform(self, image, pts):
-        # obtain a consistent order of the points and unpack them
-        # individually
+        """ Perform the perspective transform of the image using the coordinates """
         rect = self.order_points(pts)
         (tl, tr, br, bl) = rect
 
-        '''compute the width of the new image, which will be the
-        maximum distance between bottom-right and bottom-left
-        x-coordiates or the top-right and top-left x-coordinates'''
+        # Calculating width of the document
         widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
         widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
         maxWidth = max(int(widthA), int(widthB))
 
-        '''compute the height of the new image, which will be the
-        maximum distance between the top-right and bottom-right
-        y-coordinates or the top-left and bottom-left y-coordinates'''
+        # Calculating height of the document
         heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
         heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
         maxHeight = max(int(heightA), int(heightB))
 
-        '''now that we have the dimensions of the new image, construct
-        the set of destination points to obtain a "birds eye view",
-        (i.e. top-down view) of the image, again specifying points
-        in the top-left, top-right, bottom-right, and bottom-left order'''
+        # Finding Transformation Matrix and transforming the image
         dst = np.array([
             [0, 0],
             [maxWidth - 1, 0],
             [maxWidth - 1, maxHeight - 1],
             [0, maxHeight - 1]], dtype = "float32")
-        # compute the perspective transform matrix and then apply it
         M = cv2.getPerspectiveTransform(rect, dst)
         warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
-        # return the warped image
+
         return warped
