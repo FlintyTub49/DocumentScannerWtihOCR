@@ -1,6 +1,4 @@
-# ---------------------------------------------------------------------------- #
-#                              Importing Packages                              #
-# ---------------------------------------------------------------------------- #
+# ---------------------------- Importing Packages ---------------------------- #
 from scipy.spatial import distance as dist
 from matplotlib.patches import Polygon
 import polygon_interacter as poly_i
@@ -17,9 +15,7 @@ import argparse
 import os
 
 
-# ---------------------------------------------------------------------------- #
-#                       Images Stacking Utility Function                       #
-# ---------------------------------------------------------------------------- #
+# --------------------- Images Stacking Utility Function --------------------- #
 def stackImages(scale, imgArray):
     rows = len(imgArray)
     cols = len(imgArray[0])
@@ -51,13 +47,10 @@ def stackImages(scale, imgArray):
         ver = hor
     return ver
 
-# ---------------------------------------------------------------------------- #
-#                           Main Running Of The Code                           #
-# ---------------------------------------------------------------------------- #
-###################################
+# ------------------------- Main Running Of The Code ------------------------- #
+# Setting a fixed resolution of the image
 widthImg = 1200
 heightImg = 675
-###################################
 
 cap = cv2.VideoCapture(1)
 cap.set(10,150)
@@ -65,17 +58,14 @@ cap.set(10,150)
 interactive = int(input('Do you want it to be interactive? (1/0): '))
 docCap = DocScanner(interactive = interactive)
 
-i = 0
 while True:
     success, img = cap.read()
-    # img = cv2.imread('test.jpeg')
     img = cv2.resize(img, (widthImg, heightImg))
-    # print(img.shape)
                      
-    # get the contour of the document
+    # Finding Contours
     screenCnt = docCap.get_contour(img)
 
-    # In case it being interactive
+    # If the interactive feature has to be used,
     if docCap.interactive:
         # ---------------------- Experimental - For Ease Of Use ---------------------- #
         screenCnt[0][0] = screenCnt[0][0] - 10; screenCnt[0][1] = screenCnt[0][1] + 10; 
@@ -85,28 +75,20 @@ while True:
         # ---------------------------------------------------------------------------- #
         screenCnt = docCap.interactive_get_contour(screenCnt, img)
 
-    # apply the perspective transformation
+    # Applying the perspective transformation
     warped = docCap.four_point_transform(img, screenCnt)
 
-    # convert the warped image to grayscale
+    # Preprocessing image for OCR
     gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-
-    # sharpen image
     sharpen1 = cv2.GaussianBlur(gray, (0,0), 3)
     sharpen2 = cv2.addWeighted(gray, 1.5, sharpen1, -0.5, 0)
-
-    # apply adaptive threshold to get black and white effect
-    # thresh = cv2.adaptiveThreshold(sharpen2, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 15)
     
     imageArray = ([img, warped],
                   [sharpen1, sharpen2])
 
     stackedImages = stackImages(0.6, imageArray)
     cv2.imshow("WorkFlow", stackedImages)
-
-    # cv2.imwrite(f'/Users/nmims/Desktop/Semester VII/Capstone Project/Doc Scanner/FinalChecks/input{i}.jpeg', img)
-    # cv2.imwrite(f'/Users/nmims/Desktop/Semester VII/Capstone Project/Doc Scanner/FinalChecks/output{i}.jpeg', sharpen2)
-    i = i + 1                     
+   
     if cv2.waitKey(1) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
         cap.release()
