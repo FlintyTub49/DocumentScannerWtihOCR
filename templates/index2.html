@@ -24,8 +24,8 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
         "Segoe UI Symbol";
-      background-image: url("background.jpg");
-      /* background-image: url('background.jpg'); */
+      /* background-image: url("background.jpg"); */
+      background-image: url("{{ url_for('static', filename='background.jpg') }}");
       backdrop-filter: hue-rotate(120deg) blur(10px);
       height: 100vh;
       display: grid;
