@@ -85,6 +85,19 @@
     svg {
       vertical-align: middle;
     }
+
+    a:link, a:visited, a:hover, a:active{
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid rgb(75, 75, 75);
+      font-size: 1em;
+      font-weight: bold;
+      color:black;
+      border-radius: 10px;
+      background-color: rgba(255, 255, 255, 0.555);
+    }
   </style>
 
   <body>
@@ -102,25 +115,20 @@
           <polyline points="13 2 13 9 20 9"></polyline></svg>
         Select Files
       </label>
-      <!-- ----------------------------------------------------------------------- -->
       
       <!-- ---------------------------- Upload Button ---------------------------- -->
       <input type="submit" value="Upload"></input>
-      <!-- ----------------------------------------------------------------------- -->
       </form>
 
       <!-- -------------------------- Download Scripts --------------------------- -->
-      <button>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        <!-- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
           class="feather feather-download">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Download
-      </button>
-      <!-- ----------------------------------------------------------------------- -->
+        </svg> -->
+      <a href="{{url_for('images_zip')}}" class="button">Download</a>
     </div>
   </body>
 </html>

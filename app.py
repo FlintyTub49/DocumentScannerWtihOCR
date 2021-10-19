@@ -1,6 +1,9 @@
 import os
-from flask import Flask, flash, request, redirect, render_template
+from flask import Flask, flash, request, redirect, render_template, send_file
 from werkzeug.utils import secure_filename
+import zipfile
+import io
+import pathlib
 
 import cv2
 import polygon_interacter as poly_i
@@ -52,12 +55,12 @@ def get_output():
 
         cv2.imwrite(os.path.join(path, f'outputs/{image}'), sharpen2)
 
-
+# -------------------------- Basic Homepage Template ------------------------- #
 @app.route('/')
 def upload_form():
     return render_template('index2.html')
 
-
+# ------------------- Uploading Files to the Uploads Folder ------------------ #
 @app.route('/', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
@@ -77,6 +80,21 @@ def upload_file():
         get_output()
         return redirect('/')
 
+# ---------------- Make the output files Available to Download --------------- #
+@app.route('/download')
+def images_zip():
+    base_path = pathlib.Path('./outputs/')
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, mode = 'w') as z:
+        for f_name in base_path.iterdir():
+            z.write(f_name)
+    data.seek(0)
+    return send_file(
+        data,
+        mimetype='application/zip',
+        as_attachment=True,
+        attachment_filename='images.zip'
+    )
 
 if __name__ == "__main__":
     app.run(host = '127.0.0.1', port = 5000, debug = True, threaded = True)
