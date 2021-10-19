@@ -1,4 +1,4 @@
-import os
+import os, glob
 from flask import Flask, flash, request, redirect, render_template, send_file
 from werkzeug.utils import secure_filename
 import zipfile
@@ -83,18 +83,24 @@ def upload_file():
 # ---------------- Make the output files Available to Download --------------- #
 @app.route('/download')
 def images_zip():
+
+    # Creating the Zip File of Outputs
     base_path = pathlib.Path('./outputs/')
     data = io.BytesIO()
     with zipfile.ZipFile(data, mode = 'w') as z:
-        for f_name in base_path.iterdir():
-            z.write(f_name)
+        for fileName in base_path.iterdir():
+            z.write(fileName)
+            os.unlink(fileName)
     data.seek(0)
-    return send_file(
-        data,
-        mimetype='application/zip',
-        as_attachment=True,
-        attachment_filename='images.zip'
-    )
+
+    # Remove uploaded Files
+    upload = pathlib.Path('./uploads/')
+    for fileName in upload.iterdir():
+        os.unlink(fileName)
+
+    # Returning the zip file
+    return send_file(data, mimetype='application/zip',
+        as_attachment=True, attachment_filename='images.zip')
 
 if __name__ == "__main__":
     app.run(host = '127.0.0.1', port = 5000, debug = True, threaded = True)
