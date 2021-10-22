@@ -102,5 +102,7 @@ def images_zip():
     return send_file(data, mimetype='application/zip',
         as_attachment=True, attachment_filename='images.zip')
 
+
+# --------------------- Run The App In Local Environment --------------------- #
 if __name__ == "__main__":
     app.run(host = '127.0.0.1', port = 5000, debug = True, threaded = True)
