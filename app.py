@@ -21,10 +21,15 @@ docCap = DocScanner(interactive = 0)
 # ----------------------------- Get current path ----------------------------- #
 path = os.getcwd()
 UPLOAD_FOLDER = os.path.join(path, 'uploads')
+OUTPUT_FOLDER = os.path.join(path, 'outputs')
 
 # ---------------- Make upload directory if it does not exist ---------------- #
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
+
+if not os.path.isdir(OUTPUT_FOLDER):
+    os.mkdir(OUTPUT_FOLDER)
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ------------------ Allowed extension you can set your own ------------------ #
